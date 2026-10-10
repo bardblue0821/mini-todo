@@ -19,7 +19,7 @@ Playwright の主要機能を一通り試せるよう、小さな Next.js アプ
 | データ保存 | サーバ側のインメモリ (DB 不使用) |
 | API | Next.js Route Handlers (`app/api/**`) |
 | E2E テスト | `@playwright/test` |
-| ランタイム | Node.js 20 以上 (npm 10.9.3 を確認済み) |
+| ランタイム | Node.js 22 LTS (WSL 内に nvm で導入。Windows 側の node / npm は使わない) |
 | パッケージマネージャ | npm |
 | テスト言語 | TypeScript |
 | テスト対象ブラウザ | Chromium のみ |
@@ -28,6 +28,7 @@ Playwright の主要機能を一通り試せるよう、小さな Next.js アプ
 
 - OS: WSL2 (Windows 上の Linux)。VS Code は Remote - WSL (VS Code Server) 経由で利用。
 - プロジェクトの配置先: `/home/bardblue/code/mini-todo` (WSL のファイルシステム内。`/mnt/c/...` 配下は遅いため使わない)。
+- Node.js は WSL 内に nvm で導入する (`nvm install 22`)。WSL の PATH には Windows 側の `npm` (`/mnt/c/Program Files/nodejs/`) が混ざるため、`which node npm` が `~/.nvm/...` を指すことを確認する。Windows の npm を WSL から使うとパス変換・OS 違いのネイティブバイナリ・遅い I/O で正しく動かない。
 - ブラウザ表示は **ヘッドレスを基本** とする (表示環境が不明でも動くため)。
 - headed / UI モードは WSLg (Windows 11 または対応済みの Windows 10) が有効な場合のみ使える。使えない場合は次の代替手段で学ぶ。
   - HTML レポート: `npx playwright show-report` で出力される URL を Windows 側のブラウザで開く。
@@ -115,10 +116,10 @@ use: { baseURL: "http://localhost:3000", trace: "on-first-retry", headless: true
   git config --global init.defaultBranch main
   ```
 
-- リポジトリは `/home/bardblue/code/mini-todo` (アプリ専用)。`design/` (この仕様書) は含めない。
-- `create-next-app` が `mini-todo` の git リポジトリを自動で初期化する。初期化されていない場合は `git init` を実行する。
-- デフォルトブランチは `main`。`create-next-app` が別名で作成した場合は `git branch -M main` で揃える。
-- 最初のコミット (雛形) は `chore: create-next-app` とする。以降は 10.4 のコミット規約に従う。
+- リポジトリは `/home/bardblue/code/mini-todo`。`design/` (この仕様書) も同じリポジトリに含める。
+- GitHub 上のリポジトリ (`bardblue0821/mini-todo`) は作成済みで、`README.md` と `design/program.md` が入っている。作業ディレクトリが空でないため `create-next-app` は直接実行できない。一時ディレクトリに `--disable-git` で生成し、`README.md` と `.git` を除いてコピーする。
+- デフォルトブランチは `main`。
+- 雛形のコミットは `chore: create-next-app` とする。以降は 10.4 のコミット規約に従い、コミットごとに push する。
 - `.gitignore` には Next.js 標準の項目に加えて、次を追加する。
 
   ```
@@ -178,13 +179,18 @@ use: { baseURL: "http://localhost:3000", trace: "on-first-retry", headless: true
 
 | メソッド | パス | 概要 | 備考 |
 | --- | --- | --- | --- |
-| POST | `/api/login` | ログイン | 成功 200 + Cookie / 失敗 401 |
-| POST | `/api/logout` | ログアウト | Cookie 削除 |
-| GET | `/api/todos` | 一覧取得 | 500ms 遅延、未認証は 401 |
-| POST | `/api/todos` | 追加 | body: `{ title }` |
-| PATCH | `/api/todos/:id` | 更新 | `done`, `title`, `memo` |
-| DELETE | `/api/todos/:id` | 削除 | |
-| POST | `/api/test/reset` | データ初期化 | `NODE_ENV !== "production"` のみ有効。テスト間の状態リセット用 |
+| POST | `/api/login` | ログイン | body: `{ username, password }`。成功 200 + Cookie (`session`: HttpOnly / SameSite=Lax / Path=/) / 失敗 401 |
+| POST | `/api/logout` | ログアウト | 200 + Cookie 削除 |
+| GET | `/api/todos` | 一覧取得 | 200 `Todo[]`、500ms 遅延、未認証は 401 |
+| POST | `/api/todos` | 追加 | body: `{ title }`。201 + 作成した `Todo` / title が空 (trim 後)・100 文字超は 400 |
+| PATCH | `/api/todos/:id` | 更新 | body: `done` / `title` / `memo` の一部。200 + 更新後の `Todo` / 存在しない id は 404 / 不正な値は 400 |
+| DELETE | `/api/todos/:id` | 削除 | 204 / 存在しない id は 404 |
+| POST | `/api/test/reset` | データ初期化 | 204。`NODE_ENV !== "production"` のみ有効 (本番は 404)。テスト間の状態リセット用 |
+
+- `/api/todos` 系は未認証なら全メソッドで 401。
+- エラー時の body は `{ "error": "<メッセージ>" }`。
+- セッション Cookie は HMAC 署名付きのステートレストークン。サーバー側にセッションを持たない (logout が他のテストの認証状態を壊さないため)。
+- 一覧の表示用フィルタ値は `all` (既定) / `active` / `completed`。不正な値は `all` として扱う。
 
 Todo の型:
 
@@ -225,6 +231,9 @@ mini-todo/
 ├─ tests/
 │  ├─ auth.setup.ts            # ログイン状態を保存 (ステップ 4)
 │  ├─ unit/store.spec.ts      # ロジックのテスト (TDD 10.2)
+│  ├─ api/                    # API テスト (reset / auth など)
+│  ├─ step04-auth-reuse.spec.ts
+│  ├─ todo-detail.spec.ts     # 詳細画面 (4.3)
 │  ├─ pages/TodoPage.ts        # Page Object (ステップ 10)
 │  ├─ fixtures.ts              # 独自 fixture (ステップ 10)
 │  ├─ step01-about.spec.ts     # 各ステップの解答例
@@ -256,8 +265,8 @@ mini-todo/
 
 | ステップ | 学ぶこと | 課題 (対象テストファイル) |
 | --- | --- | --- |
-| 1 | 基本操作・ロケーター | `/about` を開き、タイトル・見出し・画像の `alt` を検証 (`about.spec.ts`) |
-| 2 | フォーム入力・アサーション | ログイン成功/失敗/未入力のバリデーションを検証 (`login.spec.ts`) |
+| 1 | 基本操作・ロケーター | `/about` を開き、タイトル・見出し・画像の `alt` を検証 (`step01-about.spec.ts`) |
+| 2 | フォーム入力・アサーション | ログイン成功/失敗/未入力のバリデーションを検証 (`step02-login.spec.ts`) |
 | 3 | ナビゲーション・URL 検証 | 未ログインで `/todos` を開くと `/login` に遷移すること |
 | 4 | 認証状態の再利用 (`storageState`) | `auth.setup.ts` でログインし、他テストで再利用 |
 | 5 | リスト操作・自動待機 | タスクの追加・完了・削除、残件数の変化を検証 (`todos.spec.ts`) |
