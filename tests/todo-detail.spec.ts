@@ -1,11 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 // Step 12 相当: 詳細画面 /todos/[id]
 // 学習ポイント: 動的ルート / タイムゾーン (Asia/Tokyo) / getByLabel / トースト (Sonner) の出現と消滅 /
 //              request フィクスチャでの状態確認 / HTTP ステータスの検証 (404) / 未ログインのリダイレクト
-test.beforeEach(async ({ request }) => {
-  await request.post("/api/test/reset");
-});
+// データ初期化は auto fixture (resetData) が行う。
 
 test.describe("表示", () => {
   test("タイトル・作成日時 (JST)・空のメモが表示される", async ({ page }) => {

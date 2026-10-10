@@ -1,11 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 // Step 8: ネットワークのモック
 // 学習ポイント: page.route / route.fulfill / route.continue / route.abort / 遅延の再現 /
 //              リクエストの待機 (waitForRequest / waitForResponse) / 実 API との使い分け
-test.beforeEach(async ({ request }) => {
-  await request.post("/api/test/reset");
-});
+// データ初期化は auto fixture (resetData) が行う。
 
 const LIST_URL = "**/api/todos";
 

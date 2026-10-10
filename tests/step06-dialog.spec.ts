@@ -1,11 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 // Step 6: ダイアログ処理
 // 学習ポイント: page.on("dialog") / page.once("dialog") / dialog.type() / dialog.message() / accept() / dismiss()
 // 注意: ダイアログのハンドラーは、ダイアログを開く操作 (click) より前に登録する。
 //       ハンドラーが無いと Playwright は自動で dismiss する。
-test.beforeEach(async ({ page, request }) => {
-  await request.post("/api/test/reset");
+test.beforeEach(async ({ page }) => {
   await page.goto("/todos");
   await expect(page.getByTestId("todo-item")).toHaveCount(3);
 });

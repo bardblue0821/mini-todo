@@ -1,11 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 // Step 7: フィルタと URL クエリ
 // 学習ポイント: getByRole('tab') / aria-selected / toHaveURL (文字列・正規表現・URL オブジェクト) /
 //              URL 直アクセス / 戻る・進む (goBack/goForward) / 不正値のフォールバック
-test.beforeEach(async ({ request }) => {
-  await request.post("/api/test/reset");
-});
+// データ初期化は auto fixture (resetData) が行う。
 
 const tab = (page: import("@playwright/test").Page, name: string) =>
   // name は既定で部分一致。「完了」が「未完了」にも一致してしまうため exact: true で完全一致にする。

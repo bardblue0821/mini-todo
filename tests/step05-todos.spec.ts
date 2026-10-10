@@ -1,11 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 // Step 5: 要素の操作・複数要素・状態の検証
 // 学習ポイント: getByTestId / getByRole('checkbox') / locator.filter / toHaveCount / toContainText(配列) /
 //              toBeChecked / toBeDisabled / toHaveAttribute / toHaveCSS / リロードしても残ることの確認
-// 既定の storageState でログイン済み。テストごとにサーバー側データを初期化する。
-test.beforeEach(async ({ page, request }) => {
-  await request.post("/api/test/reset");
+// 既定の storageState でログイン済み。データ初期化は auto fixture (resetData) が行う。
+test.beforeEach(async ({ page }) => {
   await page.goto("/todos");
 });
 
