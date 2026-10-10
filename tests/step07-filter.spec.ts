@@ -7,7 +7,9 @@ test.beforeEach(async ({ request }) => {
   await request.post("/api/test/reset");
 });
 
-const tab = (page: import("@playwright/test").Page, name: string) => page.getByRole("tab", { name });
+const tab = (page: import("@playwright/test").Page, name: string) =>
+  // name は既定で部分一致。「完了」が「未完了」にも一致してしまうため exact: true で完全一致にする。
+  page.getByRole("tab", { name, exact: true });
 
 test.describe("タブの表示", () => {
   test("「すべて」「未完了」「完了」の 3 タブがあり、既定は「すべて」が選択されている", async ({ page }) => {
@@ -103,7 +105,9 @@ test.describe("フィルタと操作の組み合わせ", () => {
     await page.goto("/todos?filter=active");
     await expect(page.getByTestId("todo-item")).toHaveCount(2);
 
-    await page.getByRole("checkbox", { name: "牛乳を買う" }).check();
+    // check() はクリック後に「同じ要素がチェック済みか」を再検証する。
+    // この操作では要素自体が一覧から消えるため、check() ではなく click() を使う。
+    await page.getByRole("checkbox", { name: "牛乳を買う" }).click();
     await expect(page.getByTestId("todo-item")).toHaveCount(1);
     await expect(page.getByTestId("remaining-count")).toHaveText("残り 1 件");
   });
