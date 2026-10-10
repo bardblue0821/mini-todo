@@ -1,16 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHydrated } from "@/lib/use-hydrated";
 
 type Errors = { username?: string; password?: string; form?: string };
 
 const REQUIRED = "必須項目です";
-
-const noopSubscribe = () => () => {};
 
 export function LoginForm() {
   const router = useRouter();
@@ -19,11 +18,7 @@ export function LoginForm() {
 
   // ハイドレーション完了前にボタンが押せてしまうと、React のハンドラーが未接続のまま
   // ブラウザ標準のフォーム送信 (資格情報が URL に載る GET) が走る。完了までボタンを無効にしておく。
-  const hydrated = useSyncExternalStore(
-    noopSubscribe,
-    () => true,
-    () => false,
-  );
+  const hydrated = useHydrated();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

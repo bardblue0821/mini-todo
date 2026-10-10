@@ -1,12 +1,4 @@
-export type Todo = {
-  id: string;
-  title: string;
-  done: boolean;
-  memo: string;
-  createdAt: string; // ISO8601
-};
-
-export const TITLE_MAX_LENGTH = 100;
+import { TITLE_MAX_LENGTH, type Todo } from "./todo";
 
 export class ValidationError extends Error {
   constructor(message: string) {

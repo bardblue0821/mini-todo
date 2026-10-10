@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
+import { LogoutButton } from "./logout-button";
+import { TodoApp } from "./todo-app";
 
 export const metadata: Metadata = {
   title: "Todo | Mini Todo",
@@ -12,7 +14,11 @@ export default async function TodosPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-8">
-      <p>こんにちは、{user} さん</p>
+      <div className="flex items-center justify-between">
+        <p>こんにちは、{user} さん</p>
+        <LogoutButton />
+      </div>
+      <TodoApp />
     </main>
   );
 }
