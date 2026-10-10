@@ -1,4 +1,5 @@
 import { addTodo, listTodos } from "@/lib/store";
+import { getScope } from "@/lib/scope";
 import { readJson, requireAuth, toErrorResponse } from "@/lib/api";
 
 // 読み込み中表示 (ローディング UI) を学習できるよう、意図的に遅延させる。
@@ -8,8 +9,13 @@ export async function GET() {
   const unauthorized = await requireAuth();
   if (unauthorized) return unauthorized;
 
-  await new Promise((resolve) => setTimeout(resolve, LIST_DELAY_MS));
-  return Response.json(listTodos());
+  try {
+    const scope = await getScope();
+    await new Promise((resolve) => setTimeout(resolve, LIST_DELAY_MS));
+    return Response.json(listTodos(scope));
+  } catch (error) {
+    return toErrorResponse(error);
+  }
 }
 
 export async function POST(request: Request) {
@@ -19,7 +25,7 @@ export async function POST(request: Request) {
   const body = await readJson(request);
   const title = typeof body === "object" && body !== null ? (body as { title?: unknown }).title : undefined;
   try {
-    return Response.json(addTodo(title), { status: 201 });
+    return Response.json(addTodo(title, await getScope()), { status: 201 });
   } catch (error) {
     return toErrorResponse(error);
   }

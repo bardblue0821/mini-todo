@@ -13,12 +13,26 @@ const SEED: readonly Todo[] = [
   { id: "3", title: "散歩する", done: true, memo: "", createdAt: "2024-01-03T09:00:00.000Z" },
 ];
 
+/** スコープを指定しない場合に使う共有のスコープ。 */
+export const DEFAULT_SCOPE = "default";
+
 // Next.js は開発時の HMR やルートごとのバンドル分割でモジュールが複数回評価されうる。
 // モジュール変数に持つと API ごとに別のデータになるため、globalThis に 1 つだけ保持する。
-const globalForStore = globalThis as typeof globalThis & { __miniTodoStore?: Todo[] };
+// データはスコープ名ごとに分けて持つ (テストの並列実行時に互いに干渉しないようにするため)。
+const globalForStore = globalThis as typeof globalThis & { __miniTodoStore?: Map<string, Todo[]> };
 
-function todos(): Todo[] {
-  return (globalForStore.__miniTodoStore ??= SEED.map((t) => ({ ...t })));
+function seed(): Todo[] {
+  return SEED.map((t) => ({ ...t }));
+}
+
+function todos(scope: string): Todo[] {
+  const store = (globalForStore.__miniTodoStore ??= new Map());
+  let list = store.get(scope);
+  if (!list) {
+    list = seed();
+    store.set(scope, list);
+  }
+  return list;
 }
 
 function validateTitle(value: unknown): string {
@@ -35,20 +49,20 @@ function validateTitle(value: unknown): string {
   return title;
 }
 
-export function resetTodos(): void {
-  globalForStore.__miniTodoStore = SEED.map((t) => ({ ...t }));
+export function resetTodos(scope: string = DEFAULT_SCOPE): void {
+  (globalForStore.__miniTodoStore ??= new Map()).set(scope, seed());
 }
 
-export function listTodos(): Todo[] {
-  return todos().map((t) => ({ ...t }));
+export function listTodos(scope: string = DEFAULT_SCOPE): Todo[] {
+  return todos(scope).map((t) => ({ ...t }));
 }
 
-export function getTodo(id: string): Todo | undefined {
-  const found = todos().find((t) => t.id === id);
+export function getTodo(id: string, scope: string = DEFAULT_SCOPE): Todo | undefined {
+  const found = todos(scope).find((t) => t.id === id);
   return found && { ...found };
 }
 
-export function addTodo(title: unknown): Todo {
+export function addTodo(title: unknown, scope: string = DEFAULT_SCOPE): Todo {
   const todo: Todo = {
     id: crypto.randomUUID(),
     title: validateTitle(title),
@@ -56,11 +70,11 @@ export function addTodo(title: unknown): Todo {
     memo: "",
     createdAt: new Date().toISOString(),
   };
-  todos().push(todo);
+  todos(scope).push(todo);
   return { ...todo };
 }
 
-export function updateTodo(id: string, patch: unknown): Todo | undefined {
+export function updateTodo(id: string, patch: unknown, scope: string = DEFAULT_SCOPE): Todo | undefined {
   if (typeof patch !== "object" || patch === null || Array.isArray(patch)) {
     throw new ValidationError("更新内容をオブジェクトで指定してください");
   }
@@ -83,14 +97,14 @@ export function updateTodo(id: string, patch: unknown): Todo | undefined {
     throw new ValidationError("done / title / memo のいずれかを指定してください");
   }
 
-  const target = todos().find((t) => t.id === id);
+  const target = todos(scope).find((t) => t.id === id);
   if (!target) return undefined;
   Object.assign(target, changes);
   return { ...target };
 }
 
-export function deleteTodo(id: string): boolean {
-  const list = todos();
+export function deleteTodo(id: string, scope: string = DEFAULT_SCOPE): boolean {
+  const list = todos(scope);
   const index = list.findIndex((t) => t.id === id);
   if (index === -1) return false;
   list.splice(index, 1);

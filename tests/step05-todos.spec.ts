@@ -140,8 +140,11 @@ test.describe("完了切替", () => {
   });
 
   test("完了状態はリロードしても保持される", async ({ page }) => {
+    // 完了切替は楽観的更新 (画面が先に変わる) なので、リロード前にサーバーへの反映 (PATCH 完了) を待つ。
+    const saved = page.waitForResponse((res) => res.request().method() === "PATCH" && res.ok());
     await page.getByRole("checkbox", { name: "レポートを書く" }).check();
     await expect(page.getByTestId("remaining-count")).toHaveText("残り 1 件");
+    await saved;
 
     await page.reload();
     await expect(page.getByRole("checkbox", { name: "レポートを書く" })).toBeChecked();

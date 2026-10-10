@@ -6,10 +6,9 @@ const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: "./tests",
-  // Step 1〜12 はサーバー上の共有データを使うため直列実行する。
-  // Step 13 でテスト単位のデータ分離を導入した後に並列化する。
-  fullyParallel: false,
-  workers: 1,
+  // テストごとにサーバー側のデータスコープ (x-test-scope) を分けているため、並列実行できる。
+  // workers は既定値 (CPU コア数の半分)。
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],

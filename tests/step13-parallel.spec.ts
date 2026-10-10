@@ -115,8 +115,11 @@ test.describe("直列実行 (前のテストの結果に依存する一連の操
   });
 
   test("2. 追加したタスクを完了にする (1 の結果に依存)", async () => {
+    // 楽観的更新なので、次のテストがリロードする前にサーバーへの反映を待つ。
+    const saved = page.waitForResponse((res) => res.request().method() === "PATCH" && res.ok());
     await page.getByRole("checkbox", { name: "直列タスク", exact: true }).click();
     await expect(page.getByTestId("remaining-count")).toHaveText("残り 2 件");
+    await saved;
   });
 
   test("3. リロードしても完了状態が残る (1・2 の結果に依存)", async () => {

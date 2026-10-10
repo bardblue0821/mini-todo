@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures";
 
 // API テスト: ブラウザ画面を使わず `request` fixture で HTTP を直接検証する。
 // 認証 Cookie なしで呼べる reset API の仕様をここで固定する。

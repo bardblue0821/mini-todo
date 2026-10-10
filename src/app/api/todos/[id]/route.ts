@@ -1,4 +1,5 @@
 import { deleteTodo, updateTodo } from "@/lib/store";
+import { getScope } from "@/lib/scope";
 import { errorResponse, readJson, requireAuth, toErrorResponse } from "@/lib/api";
 
 const NOT_FOUND = "Todo が見つかりません";
@@ -10,7 +11,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/todos/[id]
   const { id } = await ctx.params;
   const body = await readJson(request);
   try {
-    const updated = updateTodo(id, body);
+    const updated = updateTodo(id, body, await getScope());
     return updated ? Response.json(updated) : errorResponse(NOT_FOUND, 404);
   } catch (error) {
     return toErrorResponse(error);
@@ -22,5 +23,9 @@ export async function DELETE(_request: Request, ctx: RouteContext<"/api/todos/[i
   if (unauthorized) return unauthorized;
 
   const { id } = await ctx.params;
-  return deleteTodo(id) ? new Response(null, { status: 204 }) : errorResponse(NOT_FOUND, 404);
+  try {
+    return deleteTodo(id, await getScope()) ? new Response(null, { status: 204 }) : errorResponse(NOT_FOUND, 404);
+  } catch (error) {
+    return toErrorResponse(error);
+  }
 }

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 // Step 9: API テスト
 // 学習ポイント: `request` fixture / ステータスと body の検証 / 認証の有無 / テスト間のデータ初期化

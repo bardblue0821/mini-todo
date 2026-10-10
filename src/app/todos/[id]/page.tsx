@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTodo } from "@/lib/store";
+import { getScope } from "@/lib/scope";
 import { getSessionUser } from "@/lib/session";
 import { MemoForm } from "./memo-form";
 
@@ -17,7 +18,7 @@ const createdAtFormat = new Intl.DateTimeFormat("ja-JP", {
 });
 
 export async function generateMetadata({ params }: PageProps<"/todos/[id]">): Promise<Metadata> {
-  const todo = getTodo((await params).id);
+  const todo = getTodo((await params).id, await getScope());
   return { title: todo ? `${todo.title} | Mini Todo` : "Mini Todo" };
 }
 
@@ -25,7 +26,7 @@ export default async function TodoDetailPage({ params }: PageProps<"/todos/[id]"
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  const todo = getTodo((await params).id);
+  const todo = getTodo((await params).id, await getScope());
   if (!todo) notFound();
 
   return (
