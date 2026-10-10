@@ -5,11 +5,18 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { TITLE_MAX_LENGTH, type Todo } from "@/lib/todo";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FILTERS, TITLE_MAX_LENGTH, applyFilter, parseFilter, type Filter, type Todo } from "@/lib/todo";
 import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 
-export function TodoApp() {
+const FILTER_LABELS: Record<Filter, string> = {
+  all: "すべて",
+  active: "未完了",
+  completed: "完了",
+};
+
+export function TodoApp({ filter }: { filter: Filter }) {
   const router = useRouter();
   const hydrated = useHydrated();
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -106,12 +113,28 @@ export function TodoApp() {
         )}
       </form>
 
+      <Tabs
+        value={filter}
+        onValueChange={(value) => {
+          const next = parseFilter(value);
+          router.push(next === "all" ? "/todos" : `/todos?filter=${next}`);
+        }}
+      >
+        <TabsList>
+          {FILTERS.map((f) => (
+            <TabsTrigger key={f} value={f} disabled={!hydrated}>
+              {FILTER_LABELS[f]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
       <p data-testid="remaining-count" className="text-sm text-muted-foreground">
         残り {remaining} 件
       </p>
 
       <ul className="flex flex-col gap-2">
-        {todos.map((todo) => (
+        {applyFilter(todos, filter).map((todo) => (
           <li
             key={todo.id}
             data-testid="todo-item"
