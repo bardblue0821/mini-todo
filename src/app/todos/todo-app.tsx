@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -164,9 +165,12 @@ export function TodoApp({ filter }: { filter: Filter }) {
               checked={todo.done}
               onCheckedChange={(checked) => toggleTodo(todo, checked === true)}
             />
-            <span className={cn("flex-1", todo.done && "text-muted-foreground line-through")}>
+            <Link
+              href={`/todos/${todo.id}`}
+              className={cn("flex-1 hover:underline", todo.done && "text-muted-foreground line-through")}
+            >
               {todo.title}
-            </span>
+            </Link>
             <Button type="button" variant="outline" size="sm" onClick={() => deleteTodo(todo)}>
               削除
             </Button>
