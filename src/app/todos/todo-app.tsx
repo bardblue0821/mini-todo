@@ -67,6 +67,15 @@ export function TodoApp() {
     if (!res.ok) apply(todo.done);
   }
 
+  async function deleteTodo(todo: Todo) {
+    if (!window.confirm("本当に削除しますか?")) return;
+    const res = await fetch(`/api/todos/${todo.id}`, { method: "DELETE" });
+    // 404 は「すでに存在しない」状態なので、画面からも消してよい。
+    if (res.ok || res.status === 404) {
+      setTodos((current) => current.filter((t) => t.id !== todo.id));
+    }
+  }
+
   const remaining = todos.filter((t) => !t.done).length;
 
   return (
@@ -117,6 +126,9 @@ export function TodoApp() {
             <span className={cn("flex-1", todo.done && "text-muted-foreground line-through")}>
               {todo.title}
             </span>
+            <Button type="button" variant="outline" size="sm" onClick={() => deleteTodo(todo)}>
+              削除
+            </Button>
           </li>
         ))}
       </ul>
