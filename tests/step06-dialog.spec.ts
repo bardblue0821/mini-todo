@@ -16,13 +16,19 @@ test.describe("削除の確認ダイアログ", () => {
   });
 
   test("削除ボタンで confirm が開き、メッセージが正しい", async ({ page }) => {
-    const dialogPromise = page.waitForEvent("dialog");
+    // click() はダイアログが処理されるまで完了しない。
+    // そのため dialog.accept()/dismiss() は click の「前に」登録したハンドラーの中で呼ぶ。
+    let type = "";
+    let message = "";
+    page.once("dialog", async (dialog) => {
+      type = dialog.type();
+      message = dialog.message();
+      await dialog.dismiss();
+    });
     await page.getByTestId("todo-item").filter({ hasText: "牛乳を買う" }).getByRole("button", { name: "削除" }).click();
 
-    const dialog = await dialogPromise;
-    expect(dialog.type()).toBe("confirm");
-    expect(dialog.message()).toBe("本当に削除しますか?");
-    await dialog.dismiss();
+    expect(type).toBe("confirm");
+    expect(message).toBe("本当に削除しますか?");
   });
 
   test("OK (accept) すると項目が消え、残件数が更新される", async ({ page }) => {
