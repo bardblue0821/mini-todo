@@ -37,7 +37,11 @@ test.describe("ログイン画面", () => {
     await page.getByLabel("パスワード").fill("wrong");
     await page.getByRole("button", { name: "ログイン" }).click();
 
-    await expect(page.getByRole("alert")).toHaveText("ユーザー名またはパスワードが違います");
+    // Next.js はルート遷移通知用の role="alert" 要素 (#__next-route-announcer__) を全ページに挿入する。
+    // page 全体から getByRole('alert') を探すと strict mode 違反になるため、form 内に限定する。
+    await expect(page.locator("form").getByRole("alert")).toHaveText(
+      "ユーザー名またはパスワードが違います",
+    );
     await expect(page).toHaveURL("/login");
   });
 
@@ -45,7 +49,7 @@ test.describe("ログイン画面", () => {
     await page.getByLabel("ユーザー名").fill("user");
     await page.getByLabel("パスワード").fill("wrong");
     await page.getByRole("button", { name: "ログイン" }).click();
-    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.locator("form").getByRole("alert")).toBeVisible();
 
     await page.getByLabel("パスワード").fill("password");
     await page.getByRole("button", { name: "ログイン" }).click();

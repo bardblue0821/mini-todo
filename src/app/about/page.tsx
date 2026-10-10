@@ -14,6 +14,7 @@ export default function AboutPage() {
         alt="Mini Todo のロゴ"
         width={160}
         height={160}
+        priority
       />
       <p className="text-muted-foreground">
         Mini Todo は Playwright を学習するための小さな Todo アプリです。
