@@ -20,19 +20,26 @@ export function TodoApp({ filter }: { filter: Filter }) {
   const router = useRouter();
   const hydrated = useHydrated();
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [title, setTitle] = useState("");
   const [titleError, setTitleError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/todos").then(async (res) => {
-      if (cancelled) return;
-      if (res.status === 401) {
-        router.replace("/login");
-        return;
-      }
-      setTodos(await res.json());
-    });
+    fetch("/api/todos")
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.status === 401) {
+          router.replace("/login");
+          return;
+        }
+        if (!res.ok) throw new Error(`GET /api/todos failed: ${res.status}`);
+        setTodos(await res.json());
+        setStatus("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("error");
+      });
     return () => {
       cancelled = true;
     };
@@ -84,6 +91,7 @@ export function TodoApp({ filter }: { filter: Filter }) {
   }
 
   const remaining = todos.filter((t) => !t.done).length;
+  const visibleTodos = applyFilter(todos, filter);
 
   return (
     <section className="flex flex-col gap-4">
@@ -133,8 +141,18 @@ export function TodoApp({ filter }: { filter: Filter }) {
         残り {remaining} 件
       </p>
 
+      {status === "loading" && <p className="text-sm text-muted-foreground">読み込み中...</p>}
+      {status === "error" && (
+        <p role="alert" className="text-sm text-destructive">
+          Todo の取得に失敗しました
+        </p>
+      )}
+      {status === "ready" && visibleTodos.length === 0 && (
+        <p className="text-sm text-muted-foreground">タスクがありません</p>
+      )}
+
       <ul className="flex flex-col gap-2">
-        {applyFilter(todos, filter).map((todo) => (
+        {visibleTodos.map((todo) => (
           <li
             key={todo.id}
             data-testid="todo-item"

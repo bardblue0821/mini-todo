@@ -17,7 +17,7 @@ test.describe("読み込み中表示", () => {
     await expect(page.getByTestId("todo-item")).toHaveCount(3);
   });
 
-  test("レスポンスを 2 秒遅らせると、その間は読み込み中が表示され続ける", async ({ page }) => {
+  test("レスポンスを保留している間は読み込み中が表示され続ける", async ({ page }) => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
     await page.route(LIST_URL, async (route) => {
